@@ -12,7 +12,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # জিপ ফাইল আনজিপ করা
       - name: Unzip project
         run: unzip -o your-school-app.zip
 
@@ -30,23 +29,24 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      # working-directory বাদ দিয়ে সরাসরি রুটে ইনস্টল করা হচ্ছে
+      # স্বয়ংক্রিয়ভাবে সব অ্যান্ড্রয়েড লাইসেন্স গ্রহণ করা
+      - name: Accept Android SDK Licenses
+        run: yes | sdkmanager --licenses || true
+
       - name: Install npm dependencies
         run: npm install
 
-      # Expo প্রজেক্ট থেকে অ্যান্ড্রয়েড ফোল্ডার তৈরি করা
+      # ইন্টারঅ্যাক্টিভ প্রম্পট বন্ধ রাখতে --no-install ফ্ল্যাগ ব্যবহার
       - name: Generate Android folder (Expo Prebuild)
-        run: npx expo prebuild --platform android
+        run: npx expo prebuild --platform android --no-install
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      # APK বিল্ড করা
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
 
-      # APK ডাউনলোড করার জন্য আপলোড
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
