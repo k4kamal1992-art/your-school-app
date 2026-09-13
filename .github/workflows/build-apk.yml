@@ -26,41 +26,23 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Setup Android SDK and Accept Licenses
-        uses: android-actions/setup-android@v3
-
-      - name: Auto-accept all Android licenses
+      # রানারের ডিফল্ট অ্যান্ড্রয়েড এসডিকে-তে সরাসরি সব লাইসেন্স গ্রহণ করা
+      - name: Accept Android SDK Licenses
         run: |
-          mkdir -p "$ANDROID_HOME/licenses" || true
-          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$ANDROID_HOME/licenses/android-sdk-license"
-          echo "84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
-          echo "d975f751698a77b662f1254ddbeed3901e976f5a" > "$ANDROID_HOME/licenses/intel-android-extra-license"
-          echo "e9acab5b5fbb560a72cfa4f71c0ad07945a47881" > "$ANDROID_HOME/licenses/mips-android-sysimage-license"
-          echo "601085b94cd77f0b54ff8640695544944146e816" > "$ANDROID_HOME/licenses/android-googletv-license"
-          echo "859f317696f67ef43ecde8028823180d1a447662" > "$ANDROID_HOME/licenses/android-sdk-arm-dbt-license"
           yes | sdkmanager --licenses || true
 
-      - name: Install Dependencies
-        run: npm install --legacy-peer-deps
-
-      # অ্যান্ড্রয়েড ফোল্ডার সম্পূর্ণ নতুন করে জেনারেট করা
-      - name: Clean & Prebuild Android
+      - name: Install EAS CLI and Dependencies
         run: |
-          rm -rf android
-          npx expo prebuild --platform android --clean --no-install
+          npm install -g eas-cli
+          npm install --legacy-peer-deps
 
-      - name: Make Gradlew Executable
-        run: chmod +x android/gradlew
+      # EAS লোকাল বিল্ড দিয়ে সরাসরি APK তৈরি (ইন্টারঅ্যাক্টিভ প্রশ্ন ছাড়াই)
+      - name: Build Android APK locally
+        run: eas build --platform android --profile preview --local --non-interactive
 
-      # REACT_NATIVE_NODE_MODULES_DIR স্পষ্টভাবে ধরিয়ে দিয়ে বিল্ড করা
-      - name: Build Debug APK
-        working-directory: android
-        env:
-          REACT_NATIVE_NODE_MODULES_DIR: ${{ github.workspace }}/node_modules
-        run: ./gradlew assembleDebug --no-daemon -PreactNativeArchitectures=armeabi-v7a,arm64-v8a,x86,x86_64
-
+      # তৈরি হওয়া APK ফাইলটি আর্টফ্যাক্ট হিসেবে আপলোড করা
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: school-app-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+          path: ./*.apk
