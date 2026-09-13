@@ -29,23 +29,24 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      # স্বয়ংক্রিয়ভাবে সব অ্যান্ড্রয়েড লাইসেন্স গ্রহণ করা
       - name: Accept Android SDK Licenses
         run: yes | sdkmanager --licenses || true
 
-      - name: Install npm dependencies
-        run: npm install
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
 
-      # ইন্টারঅ্যাক্টিভ প্রম্পট বন্ধ রাখতে --no-install ফ্ল্যাগ ব্যবহার
-      - name: Generate Android folder (Expo Prebuild)
-        run: npx expo prebuild --platform android --no-install
+      # প্যাকেজ আইডি স্পষ্টভাবে নিশ্চিত করতে clean prebuild রান করা
+      - name: Expo Prebuild (Clean Android directory)
+        run: |
+          npx expo prebuild --platform android --clean --no-install
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
+      # প্রজেক্ট রুট প্যারামিটার স্পষ্টভাবে পাস করে Gradle রান করা
       - name: Build debug APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon -PreactNativeDir=../node_modules/react-native
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
