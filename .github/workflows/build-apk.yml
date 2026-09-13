@@ -26,30 +26,36 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Set up Android SDK
+      - name: Setup Android SDK and Accept Licenses
         uses: android-actions/setup-android@v3
 
-      - name: Accept Android SDK Licenses
-        run: yes | sdkmanager --licenses || true
+      # লাইসেন্স ফাইল সরাসরি তৈরি করে দেওয়া যাতে কনসোলে প্রম্পট না আসে
+      - name: Auto-accept all Android licenses
+        run: |
+          mkdir -p "$ANDROID_HOME/licenses" || true
+          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$ANDROID_HOME/licenses/android-sdk-license"
+          echo "84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
+          echo "d975f751698a77b662f1254ddbeed3901e976f5a" > "$ANDROID_HOME/licenses/intel-android-extra-license"
+          echo "e9acab5b5fbb560a72cfa4f71c0ad07945a47881" > "$ANDROID_HOME/licenses/mips-android-sysimage-license"
+          echo "601085b94cd77f0b54ff8640695544944146e816" > "$ANDROID_HOME/licenses/android-googletv-license"
+          echo "859f317696f67ef43ecde8028823180d1a447662" > "$ANDROID_HOME/licenses/android-sdk-arm-dbt-license"
+          yes | sdkmanager --licenses || true
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm install --legacy-peer-deps
 
-      # প্যাকেজ আইডি স্পষ্টভাবে নিশ্চিত করতে clean prebuild রান করা
-      - name: Expo Prebuild (Clean Android directory)
-        run: |
-          npx expo prebuild --platform android --clean --no-install
+      - name: Prebuild Android Project
+        run: npx expo prebuild --platform android --no-install
 
-      - name: Make gradlew executable
+      - name: Make Gradlew Executable
         run: chmod +x android/gradlew
 
-      # প্রজেক্ট রুট প্যারামিটার স্পষ্টভাবে পাস করে Gradle রান করা
-      - name: Build debug APK
+      - name: Build Debug APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon -PreactNativeDir=../node_modules/react-native
+        run: ./gradlew assembleDebug --no-daemon
 
-      - name: Upload APK artifact
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: your-school-app-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: school-app-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
