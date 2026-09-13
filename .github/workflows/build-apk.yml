@@ -26,20 +26,15 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # সব ধরনের লাইসেন্স স্বয়ংক্রিয়ভাবে অ্যাক্সেপ্ট করা (টার্মিনাল পাইপিং)
       - name: Accept Android SDK Licenses
         run: |
-          mkdir -p "$ANDROID_HOME/licenses"
-          printf "24333f8a63b6825ea9c5514f83c2829b004d1fee\nd56f5187479451eabf01fb78af6dfcb131a6481e\n" > "$ANDROID_HOME/licenses/android-sdk-license"
-          printf "84831b9409646a918e30573bab4c9c91346d8abd\n" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
-          printf "601085b94cd77f0b54ff8640695544944146e816\n" > "$ANDROID_HOME/licenses/android-googletv-license"
-          printf "33b6a2b64607f11b759f320ef9dff4ae5c47d97a\ne9acab5b5fbb560a72cfa4f71c0ad07945a47881\n" > "$ANDROID_HOME/licenses/mips-android-sysimage-license"
-          printf "859f317696f67ef43ecde8028823180d1a447662\n" > "$ANDROID_HOME/licenses/android-sdk-arm-dbt-license"
-          printf "51336184154a69e7e5ebf8737c34b15099388df6\n" > "$ANDROID_HOME/licenses/google-gdk-license"
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          yes y | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses || true
 
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
+      # প্রি-বিল্ড করে অ্যান্ড্রয়েড ফাইল তৈরি করা
       - name: Prebuild Android project
         run: |
           rm -rf android
@@ -48,9 +43,10 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
+      # গ্রেডেলের স্বয়ংক্রিয় লাইসেন্স চেকার এড়িয়ে বিল্ড করা
       - name: Build Debug APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon -Pandroid.builder.sdkDownload=false
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
