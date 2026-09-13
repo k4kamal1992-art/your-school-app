@@ -26,23 +26,33 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # রানারের ডিফল্ট অ্যান্ড্রয়েড এসডিকে-তে সরাসরি সব লাইসেন্স গ্রহণ করা
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 11076708
+
+      # রানারের ডিফল্ট sdkmanager পাথ ব্যবহার করে সরাসরি লাইসেন্স গ্রহণ
       - name: Accept Android SDK Licenses
         run: |
-          yes | sdkmanager --licenses || true
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      - name: Install EAS CLI and Dependencies
-        run: |
-          npm install -g eas-cli
-          npm install --legacy-peer-deps
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
 
-      # EAS লোকাল বিল্ড দিয়ে সরাসরি APK তৈরি (ইন্টারঅ্যাক্টিভ প্রশ্ন ছাড়াই)
-      - name: Build Android APK locally
-        run: eas build --platform android --profile preview --local --non-interactive
+      # অ্যান্ড্রয়েড ফাইল তৈরি করা
+      - name: Prebuild Android project
+        run: npx expo prebuild --platform android --clean --no-install
 
-      # তৈরি হওয়া APK ফাইলটি আর্টফ্যাক্ট হিসেবে আপলোড করা
-      - name: Upload APK Artifact
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      # এক্সপো অ্যাকাউন্ট ছাড়াই সরাসরি গ্রেডেল দিয়ে APK তৈরি
+      - name: Build Debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: school-app-debug-apk
-          path: ./*.apk
+          name: your-school-app-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
