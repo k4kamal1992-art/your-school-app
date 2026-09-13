@@ -12,6 +12,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # জিপ ফাইল আনজিপ করা
       - name: Unzip project
         run: unzip -o your-school-app.zip
 
@@ -26,31 +27,28 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      # working-directory বাদ দিয়ে সরাসরি রুটে ইনস্টল করা হচ্ছে
       - name: Install npm dependencies
-        working-directory: your-school-app
         run: npm install
 
-      - name: Add Android platform (first run only)
-        working-directory: your-school-app
-        run: |
-          if [ ! -d "android" ]; then
-            npx cap add android
-          fi
-
-      - name: Sync web assets into the Android project
-        working-directory: your-school-app
-        run: npx cap sync android
+      # Expo প্রজেক্ট থেকে অ্যান্ড্রয়েড ফোল্ডার তৈরি করা
+      - name: Generate Android folder (Expo Prebuild)
+        run: npx expo prebuild --platform android
 
       - name: Make gradlew executable
-        working-directory: your-school-app
         run: chmod +x android/gradlew
 
+      # APK বিল্ড করা
       - name: Build debug APK
-        working-directory: your-school-app/android
+        working-directory: android
         run: ./gradlew assembleDebug --no-daemon
 
+      # APK ডাউনলোড করার জন্য আপলোড
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: your-school-app-debug-apk
-          path: your-school-app/android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
