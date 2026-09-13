@@ -29,7 +29,6 @@ jobs:
       - name: Setup Android SDK and Accept Licenses
         uses: android-actions/setup-android@v3
 
-      # লাইসেন্স ফাইল সরাসরি তৈরি করে দেওয়া যাতে কনসোলে প্রম্পট না আসে
       - name: Auto-accept all Android licenses
         run: |
           mkdir -p "$ANDROID_HOME/licenses" || true
@@ -44,15 +43,21 @@ jobs:
       - name: Install Dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Prebuild Android Project
-        run: npx expo prebuild --platform android --no-install
+      # অ্যান্ড্রয়েড ফোল্ডার সম্পূর্ণ নতুন করে জেনারেট করা
+      - name: Clean & Prebuild Android
+        run: |
+          rm -rf android
+          npx expo prebuild --platform android --clean --no-install
 
       - name: Make Gradlew Executable
         run: chmod +x android/gradlew
 
+      # REACT_NATIVE_NODE_MODULES_DIR স্পষ্টভাবে ধরিয়ে দিয়ে বিল্ড করা
       - name: Build Debug APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        env:
+          REACT_NATIVE_NODE_MODULES_DIR: ${{ github.workspace }}/node_modules
+        run: ./gradlew assembleDebug --no-daemon -PreactNativeArchitectures=armeabi-v7a,arm64-v8a,x86,x86_64
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
