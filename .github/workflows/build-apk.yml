@@ -8,12 +8,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Unzip project
-        run: unzip -o your-school-app.zip
+      - name: Unzip project (works no matter what you named the zip)
+        run: unzip -o *.zip
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -26,30 +27,31 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # সব ধরনের লাইসেন্স স্বয়ংক্রিয়ভাবে অ্যাক্সেপ্ট করা (টার্মিনাল পাইপিং)
-      - name: Accept Android SDK Licenses
-        run: |
-          yes y | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+      - name: Install npm dependencies
+        working-directory: your-school-app
+        run: npm install
 
-      - name: Install dependencies
-        run: npm install --legacy-peer-deps
-
-      # প্রি-বিল্ড করে অ্যান্ড্রয়েড ফাইল তৈরি করা
-      - name: Prebuild Android project
+      - name: Add Android platform (first run only)
+        working-directory: your-school-app
         run: |
-          rm -rf android
-          npx expo prebuild --platform android --clean --no-install
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
+
+      - name: Sync web assets into the Android project
+        working-directory: your-school-app
+        run: npx cap sync android
 
       - name: Make gradlew executable
+        working-directory: your-school-app
         run: chmod +x android/gradlew
 
-      # গ্রেডেলের স্বয়ংক্রিয় লাইসেন্স চেকার এড়িয়ে বিল্ড করা
-      - name: Build Debug APK
-        working-directory: android
-        run: ./gradlew assembleDebug --no-daemon -Pandroid.builder.sdkDownload=false
+      - name: Build debug APK
+        working-directory: your-school-app/android
+        run: ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: your-school-app-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+          path: your-school-app/android/app/build/outputs/apk/debug/app-debug.apk
